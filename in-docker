@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+# Run commands in docker on local PWD by current user.
+#
+# How to use:
+# > in-docker CONTAINER COMMAND ...ARGUMENTS
+#
+# For example:
+# > in-docker php composer -v
+#
+# Define PORTS varible (in EXTERNAL:INTERNAL ports number formats) for expose container ports, like:
+# > PORTS=80:80,7000:7000 in-docker node --inspect=7000 --inspect-brk app.js
+#
+# How to install:
+# 1) clone into any local place
+# 2) link that script to ~/.local/bin/in-docker
+# 3) make simple scripts for nedded instruments in ~/.local/bin, like:
+#    #!/bin/bash
+#    in-docker node npm $@
+
+CONTAINER=$1
+COMMAND=$2
+PORTS_EXPOSE=""
+
+shift 2
+
+if [ -z "$(docker images -q $CONTAINER:local 2> /dev/null)" ]; then
+  cd ~/.local/docker/$CONTAINER && docker build -t $CONTAINER:local .
+fi
+
+if [[ ! -z "${PORTS}" ]]; then
+  PORTS_EXPOSE="-p $(echo $PORTS | sed 's/,/ -p /g')"
+fi
+
+docker run -ti --rm -v $HOME:$HOME -v /tmp:/tmp -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u $(id -u):$(id -g) -v "$(pwd):/var/www" -w /var/www $PORTS_EXPOSE $CONTAINER:local $COMMAND $@
+
