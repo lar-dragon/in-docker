@@ -21,6 +21,7 @@
 CONTAINER=$1
 COMMAND=$2
 PORTS_EXPOSE=""
+TTY_FLAG=""
 
 shift 2
 
@@ -32,5 +33,9 @@ if [[ ! -z "${PORTS}" ]]; then
   PORTS_EXPOSE="-p $(echo $PORTS | sed 's/,/ -p /g')"
 fi
 
-docker run -ti --rm -v $HOME:$HOME -v /tmp:/tmp -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u $(id -u):$(id -g) -v "$(pwd):/var/www" -w /var/www $PORTS_EXPOSE $CONTAINER:local $COMMAND $@
+if [[ -t 1 ]]; then
+  TTY_FLAG="-t";
+fi
+
+docker run $TTY_FLAG -i --rm -v $HOME:$HOME -v /tmp:/tmp -v /etc/passwd:/etc/passwd:ro -v /etc/group:/etc/group:ro -u $(id -u):$(id -g) -v "$(pwd):/var/www" -w /var/www $PORTS_EXPOSE $CONTAINER:local $COMMAND $@
 
